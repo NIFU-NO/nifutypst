@@ -30,6 +30,47 @@
   path_cover_upper_image: none,
   doc
 ) = {
+
+  let report_type = if lower(report_type) in ("report", "rapport") {
+    "rapport"
+  } else if lower(report_type) in ("workingpaper", "working-paper", "working paper", "working_paper", "arbeidsnotat") {
+    "arbeidsnotat"
+  } else {
+    none
+  }
+  let type_fill = if report_type == "rapport" {
+    rgb("#C84957")
+  } else if report_type == "arbeidsnotat" {
+    rgb("#2D8E9F")
+  } else if report_type == none {
+    rgb("#ffffff")
+  }
+  let type_pretty = if report_type == "rapport" {
+    "Rapport"
+  } else if report_type == "arbeidsnotat" {
+    "Arbeidsnotat"
+  } else if report_type == none {
+    ""
+  }
+
+
+  let path_cover_upper_image = if path_cover_upper_image != "" {
+    path_cover_upper_image
+  } else if report_type == "rapport" {
+    "_images/cover-ovre.png"
+  } else if report_type == "arbeidsnotat" {
+    "_images/cover-ovre-arbeidsnotat.png"
+  } else {
+    none
+  }
+  let path_cover_lower_image = if report_type == "rapport" {
+    "_images/cover-nedre.png"
+  } else if report_type == "arbeidsnotat" {
+    "_images/cover-nedre-arbeidsnotat.png"
+  } else {
+    none
+  }
+
   set page(
     paper: paper,
     margin: margin,
@@ -38,14 +79,14 @@
           #text(spacing: 0.2cm)[
             #text(size: 11pt)[#counter(page).display()]
             #text(
-              fill: if report_type == "rapport" {rgb("#C84957")} else {rgb("#2D8E9F")},
+              fill: type_fill,
               size: 12pt)[#symbol("•")] 
             #text(
               size: 8pt, 
               spacing: 0.1cm,
-              font: "Calibri")[Rapport #report_no]]]],
-    background: context if counter(page).get().at(0) == 1 [
-        #image("_images/cover_nedre.png")]
+              font: "Calibri")[#type_pretty #report_no]]]],
+    background: context if counter(page).get().at(0) == 1 and path_cover_lower_image != none [
+        #image(path_cover_lower_image)]
     )
     
   let concatenatedAuthors = if type(authors) != str [
@@ -147,22 +188,17 @@
           #it.body]
   }
   // Forsidens illustrasjon
-  if path_cover_upper_image == "" {
-      box(place(top + left,
-        dx: -margin.at("x"), dy: -margin.at("y"))[
-    #image("_images/cover-ovre.png",
-           width: 210mm)
-  ])
-  } else {
+  if path_cover_upper_image != none {
   box(place(top + left,
         dx: -margin.at("x"), dy: -margin.at("y"))[
     #image(path_cover_upper_image,
            width: 210mm)
   ])
-
   }
     
     
+  
+  if report_type != none {
   
   if title != none {
     set par(leading: 0.55em)
@@ -179,7 +215,7 @@
   place(dx: 36.2em, dy: 25em)[
     #circle(
       radius: 11pt,
-      fill: if report_type == "rapport" {rgb("#C84957")} else {rgb("#2D8E9F")},
+      fill: type_fill,
       stroke: white)
     ]
   
@@ -195,15 +231,13 @@
           )[#subtitle]]]]
   }
 
-  if report_no != none {
     set par(leading: 0.65em)
     place(dx: 34em, dy: 29em)[
       #align(right)[
         #text(
           size: 12.5pt,
           font: "Calibri"
-        )[Rapport #linebreak()#report_no]]]
-  }
+        )[#type_pretty#linebreak()#report_no]]]
 
   if authors != none {
     place(dx: -4.2em, dy: 56em)[
@@ -219,6 +253,7 @@
 
   pagebreak()
   pagebreak()
+}
 
   place(dx: -6em, dy: 38em)[
     #set par(leading: 0.55em)
@@ -246,7 +281,7 @@
         #text(
           size: 12.5pt,
           font: "Calibri"
-        )[Rapport #linebreak() #report_no]]]
+        )[#type_pretty#linebreak()#report_no]]]
 
     place(dx: -4.2em, dy: 56em)[
       #set par(leading: 0.55em)
@@ -257,38 +292,40 @@
         )[#concatenatedAuthors]]]
 
     line(
-    stroke: 1.5pt + rgb("#C84957"),
-    length: 22%,
+    stroke: 1.5pt + type_fill,
+    length: 16.5%,
     start: (-4.2em, 54em))
 
   counter(page).update(1)
   
   pagebreak()
   
-  {
+  if report_type != none {
   show table.cell: set text(size: 9pt)
   table(
-    columns: (1.1fr, 3.5fr),
-    stroke: none,
-    align: left,
-    [Rapport], [#report_no],
-    [Utgitt av], [Nordisk institutt for studier av innovasjon, forskning og utdanning],
-    [Adresse], [Postboks 2815 Tøyen, 0608 Oslo. Besøksadresse: Økernveien 9, 0653 Oslo],
-    [], [],
-    [Prosjektnr.], [#project_no],
-    [], [],
-    [Oppdragsgiver], [#funder],
-    [Adresse], [#funder_address],
-    [], [],
-    [Fotomontasje], [NIFU],
-    [], [],
-    [ISBN], [#isbn],
-    [ISBN], [#isbn_online],
-    [ISSN], [#issn]
+      columns: (1.1fr, 4.0fr),
+      stroke: none,
+      align: left,
+      inset: (x: 0pt, y: 4pt),
+      [#type_pretty], [#report_no],
+      [], [],
+      [Utgitt av], [Nordisk institutt for studier av innovasjon, forskning og utdanning (NIFU)],
+      [Adresse], [Postboks 2815 Tøyen, 0608 Oslo. Besøksadresse: Økernveien 9, 0653 Oslo.],
+      [], [],
+      [Prosjektnr.], [#project_no],
+      [], [],
+      [Oppdragsgiver], [#funder],
+      [Adresse], [#funder_address],
+      [], [],
+      [Fotomontasje], [NIFU],
+      [], [],
+      [ISBN], [#isbn],
+      [ISBN], [#isbn_online],
+      [ISSN], [#issn]
     )
   }
   
-  image("_images/CC-BY.svg", width: 8em)
+  image("_images/CC-BY.svg", width: 2.32cm)
   
   text(size: 9pt)[Copyright NIFU: CC-BY-4.0]
   
@@ -317,16 +354,16 @@
   )[#text()[Oslo, #date]]
 
   if signer_1 != "" {
-  grid(
-    columns: 2,
-    column-gutter: 15em,
-    rows: 2,
-    row-gutter: 1em,
-    text()[#signer_1],
-    text()[#signer_2],
-    text()[#signer_1_title],
-    text()[#signer_2_title])
-  }
+    grid(
+      columns: 2,
+      column-gutter: 15em,
+      rows: 2,
+      row-gutter: 1em,
+      text()[#signer_1],
+      text()[#signer_2],
+      text()[#signer_1_title],
+      text()[#signer_2_title])
+    }
   }
 
   
@@ -350,7 +387,9 @@
 	              let num = query(selector(heading).before(here())).last().numbering
 	              numbering("1.1", hdr, n)
     })
+
   doc
+
   }
 
   if references != "" {
@@ -361,7 +400,8 @@
     bibliography(
       references,
       title: [Referanser],
-      style: "apa")}
+      style: "apa")
+  }
 
   if appendix != none {
     [hargle bargle]
@@ -381,14 +421,16 @@
       depth: 1)
   }
 
+  if report_type != none {
   pagebreak()
   
   counter(page).update(0)
   place(dy: 45em)[
-    #text()[
+      #text(size: 8pt)[
       Nordisk institutt for studier av #linebreak()
       innovasjon, forskning og utdanning #linebreak() #linebreak()
       Nordic institute for Studies in #linebreak()
       Innovation, Research and Education #linebreak() #linebreak()
       www.nifu.no]]
+  }
 }
